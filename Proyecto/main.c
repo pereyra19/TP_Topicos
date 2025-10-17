@@ -25,6 +25,10 @@ Por ejemplo: Si el grupo se llamase “Invisible” -y sus integrantes fueran Sp
 
 int main()
 {
+    SetConsoleOutputCP(CP_UTF8);   /* forza CP 65001 (UTF-8) para la salida de la consola */
+    SetConsoleCP(CP_UTF8);         /* (opcional) entrada desde consola en UTF-8 */
+
+
     int ret=TODO_OK;
 
 
@@ -36,7 +40,7 @@ int main()
     }
     if(ret == TODO_OK)
     {
-        // funcion 03
+        ret = recorrerArchivoDiv(normalizarDiv);
     }
 
     if(ret!= TODO_OK)
@@ -46,7 +50,4 @@ int main()
 
     return 0;
 }
-
-
-
 

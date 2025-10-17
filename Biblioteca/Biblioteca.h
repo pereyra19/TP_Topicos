@@ -6,13 +6,13 @@
 #include<string.h>
 #include<stdio.h>
 #include<ctype.h>
+#include<windows.h>
 
 #define TODO_OK 0
 #define ERR_LINEA -1
 #define ERR_FECHA -2
 #define ERR_ARCH -3
 #define TAMLINEA 190
-
 
 typedef struct{
     char codigo[21];
@@ -22,9 +22,13 @@ typedef struct{
     double v_m_ipc;
     double v_i_a_IPC;
     char region[10];
-    char periodo_codificado[20]; // ojo en el enunciado es int,
+    char periodo_codificado[20];
 }
 Tipc;
+
+
+//------------------Macro--------------------
+#define ES_LETRA(c) (((c) >= 'A' && (c) <= 'Z') || ((c) >= 'a' && (c) <= 'z'))
 
 //----------------Archivos--------------------
 #define nomArchDivisiones "serie_ipc_divisiones(in).csv"
@@ -40,6 +44,9 @@ int recorrerArchivoDiv(Convertir convertir);
 int decodificadorFecha(char *linea);
 #02
 int convertirFecha(char *linea);
-
+#03
+int normalizarDiv(char *linea);
+void normalizarDescripcion(char *S1);
+#04
 
 #endif // BIBLIOTECA_H_INCLUDED

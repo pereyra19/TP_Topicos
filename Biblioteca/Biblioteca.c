@@ -1,5 +1,6 @@
 #include"Biblioteca.h"
 
+//#
 FILE *abrirArchivos(const char *nomArch,const char *modo)
 {
     FILE *arch = fopen(nomArch,modo);
@@ -11,7 +12,7 @@ FILE *abrirArchivos(const char *nomArch,const char *modo)
 
     return arch;
 }
-
+//#
 int recorrerArchivoDiv(Convertir convertir)
 {
     char linea[TAMLINEA+1];
@@ -59,6 +60,7 @@ int recorrerArchivoDiv(Convertir convertir)
     return TODO_OK;
 }
 
+//#01
 int decodificadorFecha(char *linea)
 {
     int ret = TODO_OK;
@@ -125,7 +127,7 @@ int decodificadorFecha(char *linea)
 
     return TODO_OK;
 }
-
+//#02
 int convertirFecha(char *linea)
 {
     int ret = TODO_OK;
@@ -145,6 +147,8 @@ int convertirFecha(char *linea)
         unidad = (act + strlen(act) - 1);
         decena = (act + strlen(act) - 2);
 
+        //los char numericos van desde '0'(48) hasta '9'(57)
+        //ejemplo ('6'(54) - '0'(48) = (6))
         num = (*decena - '0') * 10 + (*unidad - '0');
 
             switch(num)
@@ -180,7 +184,7 @@ int convertirFecha(char *linea)
                     strcpy(pfecha, "Octubre-");
                     break;
                 case 11:
-                    strcpy(pfecha, "Nombiembre-");
+                    strcpy(pfecha, "Noviembre-");
                     break;
                 case 12:
                     strcpy(pfecha, "Diciembre-");
@@ -211,265 +215,139 @@ int convertirFecha(char *linea)
 
     return TODO_OK;
 }
+//#03
+int normalizarDiv(char *linea)
+{
+    //firts mayuscula - el resto minuscula (respetar espacios)
+    Tipc ipc;
+    char *lim;
+    int ret = TODO_OK;
+
+    lim = strrchr(linea,'\n');
+
+    if(lim)
+    {
+        *lim = '\0';
+
+        //Periodo_codificado
+        lim = strrchr(linea,';');
+        strcpy(ipc.periodo_codificado,lim+1);
+
+        //Region
+        *lim = '\0';
+        lim = strrchr(linea,';');
+        strcpy(ipc.region,lim+1);
+
+        //v_i_a_IPC
+        *lim = '\0';
+        lim = strrchr(linea,';');
+        ipc.v_i_a_IPC = atof(lim+1);
+
+        //v_m_IPC
+        *lim = '\0';
+        lim = strrchr(linea,';');
+        ipc.v_m_ipc = atof(lim+1);
+
+        //Indice_IPC
+        *lim = '\0';
+        lim = strrchr(linea,';');
+        ipc.incide_ipc = atof(lim+1);
+
+        //Clasificador
+        *lim = '\0';
+        lim = strrchr(linea,';');
+        strcpy(ipc.clasificador,lim+1);
+
+        //Descripcion
+        *lim = '\0';
+        lim = strrchr(linea,';');
+        strcpy(ipc.descripcion,lim+1);
+
+        //llamada a normalizarDescripcion
+        normalizarDescripcion(ipc.descripcion);
+
+        //Codigo
+        *lim = '\0';
+        strcpy(ipc.codigo,linea);
+
+        sprintf(linea,"%s;%s;%s;%.0f;%.0f;%.0f;%s;%s",ipc.codigo,ipc.descripcion,ipc.clasificador,ipc.incide_ipc,ipc.v_m_ipc,ipc.v_i_a_IPC,ipc.region,ipc.periodo_codificado);
+    }
+    else
+        ret = ERR_LINEA;
+
+    if(ret != TODO_OK)
+    {
+        return ret;
+    }
+
+    return TODO_OK;
+}
+
+void normalizarDescripcion(char *S1)
+{
+    //Los caracteres con acentos ocupan (2 bytes) en memoria.
+    //Para saber si el caracter ocupa más de un byte se realiza una operacion AND con una mascara.
+    //(1 byte): mascara(0x80) -> bit alto=1 AND valor ASCII (0-127) tienen el bit alto = 0.
+    //(2 byte): ((b & 0xE0) == 0xC0)
+    char *act = S1;
+    int Firts = 1;
+
+    while(*act !='\0')
+    {
+        if(( ((unsigned char) *act) & 0x80) == 0) // caracter sin acentos ((b & 0x80) == 0)
+        {
+            if(Firts == 1)
+            {
+                Firts = 0;
+                *act = (char) toupper((unsigned char)*act);
+            }
+            else
+            {
+                if(ES_LETRA((unsigned char)*act))
+                    //se castea a unsigned ya que las funciones de ctype funcionan con valores hasta 255.
+                    *act = (char) tolower((unsigned char)*act);
+            }
+            act ++;
+        }
+        else
+        {
+            // comprobar si el segundo caracter es final de cadena
+            if (strncmp(act, "Á", 2) == 0)
+                memcpy(act,"á",2);
+            else if(strncmp(act,"É",2) == 0)
+                memcpy(act,"é",2);
+            else if(strncmp(act,"Í",2) == 0)
+                memcpy(act,"í",2);
+            else if(strncmp(act,"Ó",2) == 0)
+                memcpy(act,"ó",2);
+            else if(strncmp(act,"Ú",2) == 0)
+                memcpy(act,"ú",2);
+            else if(strncmp(act,"Ñ",2) == 0)
+                memcpy(act,"ñ",2);
+
+            act+=2;
+        }
+    }
+}
 
 
-// int decodificadorFecha(FILE *arch)
-// {
-//     Tipc ipc;
-//     char *lim, *act, *periodo, *ini;
-//     char linea[TAMLINEA+1];
-//     int ret = TODO_OK;
-
-//     rewind(arch);
-
-//     FILE *archTem = abrirArchivos(nomArchTemp,"wt");
-//     if(!archTem)
-//     {
-//         return ERR_ARCH;
-//     }
-
-//     periodo = ipc.periodo_codificado;
-//     ini = ipc.periodo_codificado;
-
-//     fgets(linea,TAMLINEA+1,arch); //lee los titulos
-//     fprintf(archTem,"%s\r\n",linea);
-
-//     while(fgets(linea,TAMLINEA+1,arch) && ret==TODO_OK)
-//     {
-//         lim = strrchr(linea,'\n');
-
-//         if(lim)
-//         {
-//             *lim = '\0';
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-//             act = lim+1;
 
 
-//             while(*act != '\0' && ret == TODO_OK)
-//             {
-//                 if(ES_NUMERO(*act))
-//                 {
-//                     switch (*act)
-//                     {
-//                         case '7':
-//                             *periodo = '0';
-//                             break;
-//                         case '4':
-//                             *periodo = '1';
-//                             break;
-//                         case '9':
-//                             *periodo = '2';
-//                             break;
-//                         case '8':
-//                             *periodo = '3';
-//                             break;
-//                         case '0':
-//                             *periodo = '4';
-//                             break;
-//                         case '6':
-//                             *periodo = '5';
-//                             break;
-//                         case '1':
-//                             *periodo = '6';
-//                             break;
-//                         case '3':
-//                             *periodo = '7';
-//                             break;
-//                         case '2':
-//                             *periodo = '8';
-//                             break;
-//                         case '5':
-//                             *periodo = '9';
-//                             break;
-//                     }
 
-//                     periodo++;
-//                 }
 
-//                 act++;
-//             }
-//             if(ret == TODO_OK)
-//             {
-//                 *periodo = '\0';
 
-//                 //Region
-//                 lim = strrchr(linea,';');
-//                 *lim = '\0';
-//                 strcpy(ipc.region,lim+1);
 
-//                 //v_i_a_IPC
-//                 lim = strrchr(linea,';');
-//                 *lim = '\0';
-//                 ipc.v_i_a_IPC = atof(lim+1);
-//                 //v_m_ipc
-//                 lim = strrchr(linea,';');
-//                 *lim = '\0';
-//                 ipc.v_m_ipc = atof(lim+1);
 
-//                 //incide_ipc
-//                 lim = strrchr(linea,';');
-//                 *lim = '\0';
-//                 ipc.incide_ipc = atof(lim+1);
 
-//                 //clasificador
-//                 lim = strrchr(linea,';');
-//                 *lim = '\0';
-//                 strcpy(ipc.clasificador,lim+1);
 
-//                 //descripcion
-//                 lim = strrchr(linea,';');
-//                 *lim = '\0';
-//                 strcpy(ipc.descripcion,lim+1);
 
-//                 //codigo
-//                 strcpy(ipc.codigo,linea);
 
-//                 fprintf(archTem,"%s;%s;%s;%f;%f;%f;%s;%s\r\n",ipc.codigo,ipc.descripcion,ipc.clasificador,ipc.incide_ipc,ipc.v_m_ipc,ipc.v_i_a_IPC,ipc.region,ipc.periodo_codificado);
 
-//                 periodo = ini; // volviendo a ipc.periodo_Codficado[0]
-//                 *periodo = '\0';
-//             }
-//         }
-//         else
-//             ret = ERR_LINEA;
-//     }
 
-//     if(ret != TODO_OK)
-//     {
-//         return ret;
-//     }
 
-//     fclose(arch);
-//     fclose(archTem);
-//     remove(nomArchDivisiones);
-//     rename(nomArchTemp,nomArchDivisiones);
 
-//     return TODO_OK;
-// }
 
-// int convertirFecha(FILE *arch)
-// {
-//     Tipc ipc;
-//     char *lim, *unidad, *decena, *periodo;
-//     char linea[TAMLINEA+1];
-//     int ret = TODO_OK, num;
 
-//     FILE *archTem = abrirArchivos(nomArchTemp,"wt");
-//     if(!archTem)
-//     {
-//         return ERR_ARCH;
-//     }
 
-//     fgets(linea,TAMLINEA+1,arch); //lee los titulos
 
-//     while(fgets(linea,TAMLINEA+1,arch) && ret==TODO_OK)
-//     {
-//         lim = strrchr(linea,'\n');
-
-//         if(lim)
-//         {
-//             *lim = '\0';
-//             unidad = lim-1;
-//             decena = lim-2;
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-
-//             periodo = ipc.periodo_codificado;
-
-//             num = (*decena - '0') * 10 + (*unidad - '0');
-
-//             switch(num)
-//             {
-//                 case 1:
-//                     strcpy(periodo, "Enero-");
-//                     break;
-//                 case 2:
-//                     strcpy(periodo, "Febrero-");
-//                     break;
-//                 case 3:
-//                     strcpy(periodo, "Marzo-");
-//                     break;
-//                 case 4:
-//                     strcpy(periodo, "Abril-");
-//                     break;
-//                 case 5:
-//                     strcpy(periodo, "Mayo-");
-//                     break;
-//                 case 6:
-//                     strcpy(periodo, "Junio-");
-//                     break;
-//                 case 7:
-//                     strcpy(periodo, "Julio-");
-//                     break;
-//                 case 8:
-//                     strcpy(periodo, "Agosto-");
-//                     break;
-//                 case 9:
-//                     strcpy(periodo, "Septiembre-");
-//                     break;
-//                 case 10:
-//                     strcpy(periodo, "Octubre-");
-
-//             }
-
-//             unidad = lim+1; // se mueve al pricipio
-
-//             for(int i=0;i<4;i++)
-//             {
-//                 *periodo = *unidad++;
-//             }
-
-//             *periodo = '\0';
-
-//             //Region
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-//             strcpy(ipc.region,lim+1);
-
-//             //v_i_a_IPC
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-//             ipc.v_i_a_IPC = atof(lim+1);
-//             //v_m_ipc
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-//             ipc.v_m_ipc = atof(lim+1);
-
-//             //incide_ipc
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-//             ipc.incide_ipc = atof(lim+1);
-
-//             //clasificador
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-//             strcpy(ipc.clasificador,lim+1);
-
-//             //descripcion
-//             lim = strrchr(linea,';');
-//             *lim = '\0';
-//             strcpy(ipc.descripcion,lim+1);
-
-//             //codigo
-//             strcpy(ipc.codigo,linea);
-
-//             fprintf(archTem,"%s;%s;%s;%f;%f;%f;%s;%s\n",ipc.codigo,ipc.descripcion,ipc.clasificador,ipc.incide_ipc,ipc.v_m_ipc,ipc.v_i_a_IPC,ipc.region,ipc.periodo_codificado);
-
-//         }
-//         else
-//             ret = ERR_LINEA;
-//     }
-
-//     if(ret != TODO_OK)
-//     {
-//         return ret;
-//     }
-
-//     fclose(arch);
-//     fclose(archTem);
-//     remove(nomArchDivisiones);
-//     rename(nomArchTemp,nomArchDivisiones);
-//     return TODO_OK;
-// }
 
