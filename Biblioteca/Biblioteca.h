@@ -16,12 +16,12 @@
 
 typedef struct{
     char codigo[21];
-    char descripcion[31];
-    char clasificador[31];
+    char descripcion[60];
+    char clasificador[40];
     double incide_ipc;
     double v_m_ipc;
     double v_i_a_IPC;
-    char region[10];
+    char region[16];
     char periodo_codificado[20];
 }
 Tipc;
@@ -29,9 +29,9 @@ Tipc;
 
 //------------------Macro--------------------
 #define ES_LETRA(c) (((c) >= 'A' && (c) <= 'Z') || ((c) >= 'a' && (c) <= 'z'))
-
+#define ES_NUM(x) ((x)>= '0' && (x)<='9')
 //----------------Archivos--------------------
-#define nomArchDivisiones "serie_ipc_divisiones(in).csv"
+#define nomArchDivisiones "serie_ipc_divisiones.csv"
 #define nomArchTemp "archTemp.csv"
 
 //---------------Puntero a funcion
@@ -40,6 +40,7 @@ typedef int (*Convertir)(char *linea);
 //---------------FUNCIONES---------------------
 FILE *abrirArchivos(const char *nomArch,const char *modo);
 int recorrerArchivoDiv(Convertir convertir);
+void convertirFloat(char *S1);
 #01
 int decodificadorFecha(char *linea);
 #02

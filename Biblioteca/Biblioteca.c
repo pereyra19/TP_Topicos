@@ -63,7 +63,7 @@ int recorrerArchivoDiv(Convertir convertir)
 //#01
 int decodificadorFecha(char *linea)
 {
-    int ret = TODO_OK;
+    int ret = TODO_OK, cant=0;
     char *lim, *act;
 
     lim = strrchr(linea,'\n');
@@ -109,16 +109,24 @@ int decodificadorFecha(char *linea)
                 case '5':
                     *act = '9';
                     break;
+                case '"':
+                    break;
                 default:                     //verifica si se ingreso otro tipo de dato
                     ret = ERR_FECHA;
                     break;
             }
+            if(ES_NUM(*act))
+                cant++;
 
             act++;
         }
     }
     else
         ret = ERR_LINEA;
+
+    if(cant !=6)  // verifica que haya 6 numeros
+        ret = ERR_FECHA;
+
 
     if(ret!= TODO_OK)
     {
@@ -141,67 +149,70 @@ int convertirFecha(char *linea)
     if(lim)
     {
         *lim = '\0';
+        unidad = lim-2;
+        decena = lim-3;
 
         lim = strrchr(linea,';');
-        act = lim + 1;
-        unidad = (act + strlen(act) - 1);
-        decena = (act + strlen(act) - 2);
+        act = lim+2;
+
 
         //los char numericos van desde '0'(48) hasta '9'(57)
         //ejemplo ('6'(54) - '0'(48) = (6))
         num = (*decena - '0') * 10 + (*unidad - '0');
 
-            switch(num)
-            {
-                case 1:
-                    strcpy(pfecha, "Enero-");
-                    break;
-                case 2:
-                    strcpy(pfecha, "Febrero-");
-                    break;
-                case 3:
-                    strcpy(pfecha, "Marzo-");
-                    break;
-                case 4:
-                    strcpy(pfecha, "Abril-");
-                    break;
-                case 5:
-                    strcpy(pfecha, "Mayo-");
-                    break;
-                case 6:
-                    strcpy(pfecha, "Junio-");
-                    break;
-                case 7:
-                    strcpy(pfecha, "Julio-");
-                    break;
-                case 8:
-                    strcpy(pfecha, "Agosto-");
-                    break;
-                case 9:
-                    strcpy(pfecha, "Septiembre-");
-                    break;
-                case 10:
-                    strcpy(pfecha, "Octubre-");
-                    break;
-                case 11:
-                    strcpy(pfecha, "Noviembre-");
-                    break;
-                case 12:
-                    strcpy(pfecha, "Diciembre-");
-                    break;
-            }
+        switch(num)
+        {
+            case 1:
+                strcpy(pfecha, "\"Enero-");
+                break;
+            case 2:
+                strcpy(pfecha, "\"Febrero-");
+                break;
+            case 3:
+                strcpy(pfecha, "\"Marzo-");
+                break;
+            case 4:
+                strcpy(pfecha, "\"Abril-");
+                break;
+            case 5:
+                strcpy(pfecha, "\"Mayo-");
+                break;
+            case 6:
+                strcpy(pfecha, "\"Junio-");
+                break;
+            case 7:
+                strcpy(pfecha, "\"Julio-");
+                break;
+            case 8:
+                strcpy(pfecha, "\"Agosto-");
+                break;
+            case 9:
+                strcpy(pfecha, "\"Septiembre-");
+                break;
+            case 10:
+                strcpy(pfecha, "\"Octubre-");
+                break;
+            case 11:
+                strcpy(pfecha, "\"Noviembre-");
+                break;
+            case 12:
+                strcpy(pfecha, "\"Diciembre-");
+                break;
+        }
 
-            pfecha += strlen(pfecha); //mueve el puntero para a la ult pos
+        pfecha += strlen(pfecha); //mueve el puntero para a la ult pos
 
-            for(int i=0;i<4;i++)
-            {
-                *pfecha = *act;
-                act++;
-                pfecha++;
-            }
-            *pfecha = '\0';
+        for(int i=0;i<4;i++)
+        {
+            *pfecha = *act;
+            act++;
+            pfecha++;
+        }
+        *pfecha = '\"';
+        pfecha++;
+        *pfecha = '\0';
 
-            strcpy(lim+1,fecha); // se copia fecha por que el puntero pfecha esta apuntando a la ult pos
+        strcpy(lim+1,fecha); // se copia fecha por que el puntero pfecha esta apuntando a la ult pos
 
     }
     else
@@ -241,16 +252,19 @@ int normalizarDiv(char *linea)
         //v_i_a_IPC
         *lim = '\0';
         lim = strrchr(linea,';');
-        ipc.v_i_a_IPC = atof(lim+1);
+        convertirFloat(lim+1);    //funcion que convierte a "float" numAnterior 20,1  / numeroActual 20.1
+        ipc.v_i_a_IPC = atof(lim+1); 
 
         //v_m_IPC
         *lim = '\0';
         lim = strrchr(linea,';');
+        convertirFloat(lim+1);
         ipc.v_m_ipc = atof(lim+1);
 
         //Indice_IPC
         *lim = '\0';
         lim = strrchr(linea,';');
+        convertirFloat(lim+1);
         ipc.incide_ipc = atof(lim+1);
 
         //Clasificador
@@ -270,7 +284,7 @@ int normalizarDiv(char *linea)
         *lim = '\0';
         strcpy(ipc.codigo,linea);
 
-        sprintf(linea,"%s;%s;%s;%.0f;%.0f;%.0f;%s;%s",ipc.codigo,ipc.descripcion,ipc.clasificador,ipc.incide_ipc,ipc.v_m_ipc,ipc.v_i_a_IPC,ipc.region,ipc.periodo_codificado);
+        sprintf(linea,"%s;%s;%s;%.3f;%f;%f;%s;%s",ipc.codigo,ipc.descripcion,ipc.clasificador,ipc.incide_ipc,ipc.v_m_ipc,ipc.v_i_a_IPC,ipc.region,ipc.periodo_codificado);
     }
     else
         ret = ERR_LINEA;
@@ -296,7 +310,7 @@ void normalizarDescripcion(char *S1)
     {
         if(( ((unsigned char) *act) & 0x80) == 0) // caracter sin acentos ((b & 0x80) == 0)
         {
-            if(Firts == 1)
+            if(Firts == 1 && ES_LETRA(*act))
             {
                 Firts = 0;
                 *act = (char) toupper((unsigned char)*act);
@@ -330,7 +344,16 @@ void normalizarDescripcion(char *S1)
     }
 }
 
+void convertirFloat(char *S1)
+{
+    while(*S1 != '\0')
+    {
+        if(*S1 == ',')
+            *S1 = '.';
 
+        S1++;
+    }
+}
 
 
 
